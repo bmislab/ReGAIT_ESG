@@ -1,54 +1,27 @@
 # ReGAIT
-[![GitHub issues](https://img.shields.io/github/issues/sccn/bmsilab?color=%23fa251e&logo=GitHub)](https://github.com/bmislab/ReGAIT/issues)
+[![GitHub issues](https://img.shields.io/github/issues/sccn/bmsilab?color=%23fa251e&logo=GitHub)](https://github.com/bmislab/ReGAIT_ESG/issues)
 ![Twitter Follow](https://img.shields.io/twitter/follow/BMISLab?style=social)
 
 # What is BMIsLAB?
 The Brain-Machine Interface Systems Lab (BMIsLAB) is a team of researchers led by José María Azorín. Our work focuses on human-machine interaction through brain control in order to improve human capabilities in neural rehabilitation.
 This repository is an open source signal processing environment for electrospinography (ESG) signals running on Matlab. This folder contains original Matlab functions from the BMISLAB that have been adapted to the context of the project ReGAIT.
 
-# Signal Processing and Validation Toolbox
-This MATLAB toolbox is developed to analyze database files with a focus on signal preprocessing and technical validation.
+ 
+# Available Toolboxes
+1. Signal Processing and Validation Toolbox
 
-# Overview
-The main function, process_signal, orchestrates the execution of preprocessing and validation procedures through a modular set of subfunctions:
+Designed for preprocessing and technical validation of ESG signals.
+📂 See: [Signal_Processing_Validation](./Signal_Processing_Validation/)
 
-# Preprocessing Functions
-- ATS_filter_signals: Performs ECG denoising. Proper operation of this function requires the inclusion of Petersen’s cardiac artifact removal toolbox, available at: https://github.com/ime-luebeck/ecg-removal/releases/tag/1.1
 
-- compute_noisy_outliers: Identifies outlier samples and detects noisy electrodes.
+2. ECG Denoising and Statistical Analysis Toolbox
 
-# Technical Validation Functions
-- compute_metric_table: Generates a table containing key quality metrics including the ratio of null and noisy electrodes, the proportion of outlier samples, mean range and outlier amplitude.
-
-- compute_correlation_time: Computes a time-based correlation matrix among electrodes and quaternion signals.
-
-# Auxiliary Functions
-- comb_filter, read_func, state_filter, state_filter_sample, and filter_setup: Perform bandpass filtering and apply multiple notch filters using a state-variable filter design.
-
-# Optional Flags
-To support flexible execution, the toolbox provides the following optional flags:
-
-- flag_ATS: Runs preprocessing and applies ATS denoising.
-
-- flag_outlier: Identifies noisy electrodes and outlier samples.
-
-- flag_filtered_data: Replaces noisy and outlier data with NaNs in the matrix.
-
-- flag_correlation_matrix: Computes inter-electrode correlation.
-
-- flag_correlation_quaternions: Computes correlation between electrodes and quaternion data.
-
-- flag_save: Saves the updated data_structure.
-
-# Run
-
-    process_signal.m   
-    
-to read the provided data sets, apply ECG-removal algorithms (or reload precomputed results) and execute a validation of the data.
+Focused on ECG artifact removal and statistical evaluation of denoising algorithms.
+📂 See: [ECG_Denoising_Statistics](./ECG_Denoising_Statistics/)
 
 # Requirements
 - MATLAB R2018b or newer
-- Petersen's ECG Artifact Removal Toolbox (see link above)
+- Petersen's ECG Artifact Removal Toolbox (see [repository link](https://github.com/ime-luebeck/ecg-removal/releases/tag/1.1))
 
 # License
 This software is distributed under the MIT License. See below for full terms.
