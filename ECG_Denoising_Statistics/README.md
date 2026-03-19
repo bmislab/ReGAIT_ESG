@@ -76,7 +76,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 # In publications, please reference:
 
-Gracia, D. I., Iáñez, E., Ortiz, M., & Azorín, J. M. (2026). Denoising Non-Invasive Electroespinography Signals by Different Cardiac Artifact Removal Algorithms. Biosensors, 16(2), 82. ![DOI: 10.3390/bios16020082](https://doi.org/10.3390/bios16020082) 
+Gracia, D. I., Iáñez, E., Ortiz, M., & Azorín, J. M. (2026). Denoising Non-Invasive Electroespinography Signals by Different Cardiac Artifact Removal Algorithms. Biosensors, 16(2), 82. [DOI: 10.3390/bios16020082](https://doi.org/10.3390/bios16020082) 
 
 # Funding
 This publication is part of grant PID2021-124111OB-C31 and PID2024-156759OB-C31, funded by MICIU/AEI/10.13039/501100011033 and by ERDF, EU. This research has been also supported by grant CIACIF/2022/108 funded by ``Consellería de Educación, Universidades y Empleo (Generalitat Valenciana)" and the European Social Fund.
