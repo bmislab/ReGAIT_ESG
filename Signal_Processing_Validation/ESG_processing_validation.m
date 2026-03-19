@@ -193,11 +193,6 @@ function electrode_data = process_signal(electrode_data, experiment_data, flag_A
     % Detect and mask noisy electrodes and outlier segments
     electrode_data = compute_noisy_outliers(electrode_data, experiment_data.sample_frequency, flag_outiler, flag_filtered_data);
 
-    flag_laplacian= true;
-
-    if flag_laplacian
-        electrode_data = compute_laplacian(electrode_data);
-    end
 end
 
 
