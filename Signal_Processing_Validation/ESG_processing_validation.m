@@ -8,8 +8,9 @@
 %   - 'compute_noisy_outliers': Identifies outlier samples and detects noisy electrodes.
 
 % Technical validation is performed using the following functions:
-%   - 'compute_metric_table': Generates a table containing key signal quality metrics.
+%   - 'compute_metric': Generates a table containing key signal quality metrics.
 %   - 'compute_correlation_time': Computes correlation matrices over time.
+%   - 'compute_coherence': Computes coherence vector over frequencies bins.
 
 % Auxiliary functions to perform bandpass filtering and apply multiple notch filters using a state-variable filter design.
 %   - 'comb_filter', 'read_func', 'state_filter', 'state_filter_sample' and 'filter_setup'.
@@ -20,9 +21,10 @@
 %   - 'flag_outlier': Detects outlier samples and noisy electrodes.
 %   - 'flag_filtered_data': Updates the data matrix by assigning NaN to
 %     values identified as outliers or noisy.
-%   - 'flag_correlation_matrix': Computes correlations among electrode signals.
-%   - 'flag_correlation_quaternions': Computes correlations between electrode
+%   - 'flag_metrics': Computes metric information.
+%   - 'flag_correlation': Computes correlations between electrode
 %     signals and quaternion data.
+%   - 'flag_coherence': Computes the coherence between two matrix of electrode data.  
 %   - 'flag_save': Saves the updated 'data_structure' variable.
 
 % Note: In order to use 'ATS_filter_signals', it is necessary to include the
@@ -54,26 +56,27 @@
 
 % Define Trial Names for Each Experiment %
 % Each experiment contains a set of trial identifiers, which are strings referencing data files.
-experiment(1).name_trial = {'S01_20231114', 'S02_20231115', 'S03_20231204', 'S04_20231205', 'S05_20231218', 'S06_20231219', 'S11_20250220'};
-experiment(2).name_trial = {'S05_20240507', 'S03_20240507', 'S01_20240523', 'S02_20240611', 'S07_20240627', 'S07_20241015', 'S10_20250211'};
-experiment(3).name_trial = {'S08_20250210', 'S09_20250210'};
+experiment(1).name_trial = {'S01_20231114', 'S02_20231115', 'S03_20231204', 'S04_20231205', 'S05_20231218', 'S06_20231219', 'S11_20250220', 'S12_20260305', 'S13_20260305', 'S10_20260312'};
+experiment(2).name_trial = {'S05_20240507', 'S03_20240507', 'S01_20240523', 'S02_20240611', 'S07_20240627', 'S07_20241015', 'S10_20250211', 'S12_20260309', 'S13_20260309', 'S14_20260312'};
+experiment(3).name_trial = {'S06_20241004', 'S08_20250210', 'S09_20250210', 'S14_20260313', 'S10_20260317'};
+
 
 % Initialize Result Structures %
-% Pre-allocate result matrices with NaNs to hold metrics and correlations
-results.metrics.brachial = NaN(5,7,3,24);
-results.metrics.lumbar = NaN(5,7,3,24);
-results.metrics.linear = NaN(5,7,3,24);
-results.correlation.test1 = NaN(68,68,7,24);
-results.correlation.test2 = NaN(68,68,7,24);
-results.correlation.test3 = NaN(68,68,7,24);
+% % Pre-allocate result matrices with NaNs to hold metrics and correlations
+results.metrics.brachial = NaN(5,10,3,24);
+results.metrics.lumbar = NaN(5,10,3,24);
+results.metrics.linear = NaN(5,10,3,24);
+results.correlation = NaN(68,68,10,3,24);
+results.coherence = NaN(1001,2,10,3,24);
 
 % Define Processing Flags %
 % These boolean flags control which parts of the pipeline are executed
 flag_ATS = true;                     % Apply Adaptive Template Subtraction (ECG removal)
 flag_outiler = true;                 % Detect and mask outliers
 flag_filtered_data = true;           % Generate filtered data matrix
-flag_correlation_matrix = true;      % Compute electrode correlation metrics
-flag_correlation_quaternions = true; % Include quaternions in correlation
+flag_metrics = true;                 % Compute electrode metrics
+flag_correlation = true;             % Computes correlations between electrode signals and quaternion data.
+flag_coherence = true;             % Computes coherence between electrode matrices.
 flag_save = true;                    % Save updated data structure to disk
 
 % Main Loop: Process Trials for each subject of each gorup of experiments %
@@ -87,28 +90,27 @@ for test = 1:3
 
             if exist(trial_file, 'file')  % Only proceed if the file exists
                 load(trial_file);         % Load the data structure
-
-                % Truncate quaternion data to match brachial matrix length
-                data_estructure.quaternions.data(:, size(data_estructure.brachial_matrix.filtered_data, 2) + 1:end) = [];
-
+           
                 % Preprocess and compute brachial matrix metrics
                 data_estructure.brachial_matrix = process_signal(data_estructure.brachial_matrix, ...
                     data_estructure.experiment_data, flag_ATS, flag_outiler, flag_filtered_data);
 
-                results.metrics.brachial(:, subj, test, trial) = ...
-                    compute_metric_table(data_estructure.brachial_matrix, ...
-                    data_estructure.experiment_data.sample_frequency, ...
-                    flag_correlation_matrix);
+                if flag_metrics
+                    results.metrics.brachial(:, subj, test, trial) = ...
+                        compute_metric_table(data_estructure.brachial_matrix, ...
+                        data_estructure.experiment_data.sample_frequency);
+                end
 
                 switch test
                     case 1
                         % Correlate brachial matrix and quaternion signals
-                        results.correlation.test1(:, :, subj, trial) = ...
-                            compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
-                            [], ...
-                            data_estructure.quaternions.data, ...
-                            data_estructure.experiment_data.sample_frequency, ...
-                            flag_correlation_quaternions);
+                        if flag_correlation
+                            results.correlation(:, :, subj, test, trial) = ...
+                                compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
+                                [], ...
+                                data_estructure.quaternions.data, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
 
                     case 2
                         % Preprocess and compute lumbar matrix metrics and correlation
@@ -116,18 +118,26 @@ for test = 1:3
                             process_signal(data_estructure.lumbar_matrix, ...
                             data_estructure.experiment_data, ...
                             flag_ATS, flag_outiler, flag_filtered_data);
+                        if flag_metrics
+                            results.metrics.lumbar(:, subj, test, trial) = ...
+                                compute_metric_table(data_estructure.lumbar_matrix, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
 
-                        results.metrics.lumbar(:, subj, test, trial) = ...
-                            compute_metric_table(data_estructure.lumbar_matrix, ...
-                            data_estructure.experiment_data.sample_frequency, ...
-                            flag_correlation_matrix);
+                        if flag_correlation
+                              results.correlation(:, :, subj, test, trial)  = ...
+                                compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
+                                data_estructure.lumbar_matrix.filtered_data, ...
+                                data_estructure.quaternions.data, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
 
-                        results.correlation.test2(:, :, subj, trial) = ...
-                            compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
-                            data_estructure.lumbar_matrix.filtered_data, ...
-                            data_estructure.quaternions.data, ...
-                            data_estructure.experiment_data.sample_frequency, ...
-                            flag_correlation_quaternions);
+                        if flag_coherence
+                            results.coherence(:, :, subj, test, trial)  = ...
+                                compute_coherence(data_estructure.brachial_matrix, ...
+                                data_estructure.lumbar_matrix, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
 
                     case 3
                         % Preprocess and compute linear array metrics and correlation
@@ -136,17 +146,19 @@ for test = 1:3
                             data_estructure.experiment_data, ...
                             flag_ATS, flag_outiler, flag_filtered_data);
 
-                        results.metrics.linear(:, subj, test, trial) = ...
-                            compute_metric_table(data_estructure.linear_array, ...
-                            data_estructure.experiment_data.sample_frequency, ...
-                            flag_correlation_matrix);
+                        if flag_metrics
+                            results.metrics.linear(:, subj, test, trial) = ...
+                                compute_metric_table(data_estructure.linear_array, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
 
-                        results.correlation.test3(:, :, subj, trial) = ...
-                            compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
-                            data_estructure.linear_array.filtered_data, ...
-                            data_estructure.quaternions.data, ...
-                            data_estructure.experiment_data.sample_frequency, ...
-                            flag_correlation_quaternions);
+                        if flag_correlation
+                              results.correlation(:, :, subj, test, trial)  = ...
+                                compute_correlation_time(data_estructure.brachial_matrix.filtered_data, ...
+                                data_estructure.linear_array.filtered_data, ...
+                                data_estructure.quaternions.data, ...
+                                data_estructure.experiment_data.sample_frequency);
+                        end
                 end
 
                 % Save updated data if required
@@ -180,6 +192,12 @@ function electrode_data = process_signal(electrode_data, experiment_data, flag_A
     
     % Detect and mask noisy electrodes and outlier segments
     electrode_data = compute_noisy_outliers(electrode_data, experiment_data.sample_frequency, flag_outiler, flag_filtered_data);
+
+    flag_laplacian= true;
+
+    if flag_laplacian
+        electrode_data = compute_laplacian(electrode_data);
+    end
 end
 
 
@@ -209,8 +227,8 @@ function electrode_data = ATS_filter_signals(electrode_data, time_vector, fm)
     algoRPeak = @(sig, time) [sig, peak_detection(sig, fm, time)'];
     % Variables: Matrix data - function to detect R peak - Electrodes to
     % filter (no nulls) - Auxiliar channel (none) - Auxiliar recording (time vector)
-    dataWithRPeaks = filter_signals(rawData, algoRPeak, valid_electrodes, 0, size(data, 1)+1);
-    
+   dataWithRPeaks = filter_signals(rawData, algoRPeak, valid_electrodes, 0, size(data, 1)+1);
+     
     % High-Pass Filter (20 Hz)
     hp20 =  @(sig, rpeaks) [butter_filt_stabilized(sig, 20, fm, 'high', true, 6), rpeaks];
     % Variables: Matrix data - function to high filter 20 Hz - Electrodes to filter (no nulls) -
@@ -285,20 +303,25 @@ function electrode_data = compute_noisy_outliers(electrode_data, fm, flag_outile
         electrode_data.filtered_data(electrode_data.outlier_mask)=NaN;
         electrode_data.filtered_data(electrode_data.noisy_electrodes,:) = NaN;
     end
+
+
 end
 
-function [metric_table] = compute_metric_table(electrode_data, fm, flag_correlation_matrix)
+function [metric_table] = compute_metric_table(electrode_data, fm)
     % Computes quality metrics for an electrode matrix.
     %
     % Inputs:
     % - electrode_data: Struct with filtered_data and outlier metadata
     % - fm: Sampling frequency (used to determine segment size)
-    % - flag_correlation_matrix: Enable/disable metric computation
     %
     % Output:
-    % - metric_table: [null_electrodes; mean_amp; noisy_electrodes; outlier_ratio; outlier_amp]
+    % - metric_table: Matrix containing
+    %         • null_electrodes  – number of inactive channels
+    %         • mean_range       – mean signal amplitude range
+    %         • noisy_electrodes – number of noisy channels
+    %         • outlier_ratio    – proportion of samples marked as outliers
+    %         • outlier_amp      – mean signal amplitude range of detected outliers
     
-    if flag_correlation_matrix
         % Parameters
         seg_size = fm;
         n_segments = floor(size(electrode_data.filtered_data, 2) / seg_size);
@@ -319,11 +342,11 @@ function [metric_table] = compute_metric_table(electrode_data, fm, flag_correlat
     
         % Format result
         metric_table = [null_electrodes; mean_range; noisy_electrodes; outlier_ratio; outlier_amplitude];
-    end
+    
 end
 
 
-function correlation = compute_correlation_time(electrode_data1, electrode_data2, quaternionsdata, fm, flag_correlation_quaternions)
+function correlation = compute_correlation_time(electrode_data1, electrode_data2, quaternionsdata, fm)
     % Computes correlation matrix between electrode matrix and quaternion data.
     %
     % Inputs:
@@ -331,12 +354,10 @@ function correlation = compute_correlation_time(electrode_data1, electrode_data2
     % - electrode_data2: Electrode Matrix [electrode x time], if present
     % - quaternionsdata: Matrix [4 x time]
     % - fm: Sampling frequency (used to determine window size)
-    % - flag_correlation_quaternions: Enable/disable correlation computation
     %
     % Output:
     % - correlation: Mean correlation matrix across windows
     
-    if flag_correlation_quaternions
         % Truncate quaternion data to match electrode matrix length
         quaternionsdata(:, size(electrode_data1, 2) + 1:end) = [];
     
@@ -353,7 +374,47 @@ function correlation = compute_correlation_time(electrode_data1, electrode_data2
     
         % Average correlation matrices over time
         correlation = mean(corr_matrix, 3, 'omitnan');
+    
+end
+
+function coherence = compute_coherence(electrode_data1, electrode_data2, fm)
+    % Computes the coherence between two electrode matrices.
+    %
+    % Inputs:
+    % - electrode_data1: Struct containing raw and ATS-filtered data + null
+    % electrordes
+    % - electrode_data2: Struct with the same fields as electrode_data1
+    % - fm: Sampling frequency (used to determine window size)
+    %
+    % Output:
+    %   - coherence: A matrix of size [freq_bins x 2], containing:
+    %         column 1 → coherence using raw_data
+    %         column 2 → coherence using ATS_data
+    
+    % 1. Define spectral parameters
+    nfft = fm;
+    window = hamming(nfft);
+    noverlap = round(0.75 * nfft);
+
+    % Compute coherence (raw data)
+    inpt_raw=electrode_data1.raw_data(~electrode_data1.null_electrodes,:)';
+    oupt_raw=electrode_data2.raw_data(~electrode_data2.null_electrodes,:)';
+
+    C_raw = mscohere(inpt_raw, oupt_raw, window, noverlap, nfft, fm, 'mimo');
+    if size(C_raw, 2) > 1
+        C_raw = mean(C_raw, 2);
     end
+
+    % Compute coherence (ATS-filtered data)
+    inpt_ATS=electrode_data1.ATS_data(~electrode_data1.null_electrodes,:)';
+    oupt_ATS=electrode_data2.ATS_data(~electrode_data2.null_electrodes,:)';
+
+    C_ATS = mscohere(inpt_ATS, oupt_ATS, window, noverlap, nfft, fm, 'mimo');
+    if size(C_ATS, 2) > 1
+        C_ATS = mean(C_ATS, 2);
+    end
+
+    coherence = [C_raw, C_ATS];
 end
 
 function y_filtered = comb_filter(data, fs, fc1, fc2)
@@ -370,7 +431,6 @@ function y_filtered = comb_filter(data, fs, fc1, fc2)
     
     % Parameters
     shift = 0.5;       % Shift step in seconds
-    epoch_size = 1;    % Epoch length in seconds
     [n_ch, n_t] = size(data);
     y = detrend(data')';  % Detrend each channel
     shift_length = shift * fs; % Calculate number of samples per shift
