@@ -22,6 +22,8 @@ The main function, process_signal, orchestrates the execution of preprocessing a
 
 - compute_correlation_time: Computes a time-based correlation matrix among electrodes and quaternion signals.
 
+- compute_coherence: Calculates a coherence matrix across  frequency bins before and after ATS filtering.
+
 # Auxiliary Functions
 - comb_filter, read_func, state_filter, state_filter_sample, and filter_setup: Perform bandpass filtering and apply multiple notch filters using a state-variable filter design.
 
@@ -34,15 +36,17 @@ To support flexible execution, the toolbox provides the following optional flags
 
 - flag_filtered_data: Replaces noisy and outlier data with NaNs in the matrix.
 
-- flag_correlation_matrix: Computes inter-electrode correlation.
+- flag_metrics: Computes the quality metrics.  
 
-- flag_correlation_quaternions: Computes correlation between electrodes and quaternion data.
+- flag_correlations: Computes correlation between electrodes and quaternion data.
+
+- flag_coherence: Computes the coherence between two matrix of electrode data. 
 
 - flag_save: Saves the updated data_structure.
 
 # Run
 
-    process_signal.m   
+    ESG_processing_validation.m   
     
 to read the provided data sets, apply ECG-removal algorithms (or reload precomputed results) and execute a validation of the data.
 
@@ -67,7 +71,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 # In publications, please reference:
 
 # Funding
-This publication is part of grant PID2021-124111OB-C31, funded by MICIU/AEI/10.13039/501100011033 and by ERDF, EU. This research has been also supported by grant CIACIF/2022/108 funded by ``Consellería de Educación, Universidades y Empleo (Generalitat Valenciana)" and the European Social Fund, and grant PRE2022-103336 funded by MICIU/AEI/10.13039/501100011033 and by ESF+.
+This publication is part of grant PID2021-124111OB-C31 and PID2024-156759OB-C31, funded by MICIU/AEI/10.13039/501100011033 and by ERDF, EU. This research has been also supported by grant CIACIF/2022/108 funded by ``Consellería de Educación, Universidades y Empleo (Generalitat Valenciana)" and the European Social Fund.
 
 
 
